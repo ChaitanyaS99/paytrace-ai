@@ -8,7 +8,7 @@ Upload your own payment records (CSV, JSON, or XLSX), or answer a short question
 >
 > **Not legal advice:** PayTrace AI identifies *potential discrepancies* for your review. It does not determine that any law or contract was violated.
 
-Built by Chaitanya (lead developer) for the Chicago Education Advocacy Cooperative (ChiEAC).
+Built by Chaitanya (lead developer) for PayTrace AI at Chicago Education Advocacy Cooperative (ChiEAC).
 
 ## Status
 
