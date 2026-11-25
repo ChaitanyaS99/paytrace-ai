@@ -2,7 +2,7 @@
 
 Payment auditing for freelancers, gig workers, and independent contractors.
 
-PayTrace AI compares what a worker was owed with what they were actually paid and identifies potential payment discrepancies.
+PayTrace AI compares what a worker was owed with what they were paid and identifies potential payment discrepancies.
 
 ## Getting started
 
@@ -17,19 +17,16 @@ pip install -r requirements.txt
 pytest
 ```
 
-## Sample data
+## Supported inputs
 
-`samples/freelancer/` contains a year of payment records for a freelancer with eight payers, including platform and direct-client work:
+- CSV, JSON, and Excel (.xlsx) files
+- Exports from PayPal, Stripe, Upwork, and DoorDash, and standard invoice spreadsheets
+- A guided questionnaire for workers without invoice records
 
-| File | Contents |
-|---|---|
-| `expected.csv` | Invoices and amounts owed |
-| `received.csv` | Payments received, with gross, fee, and net amounts |
-| `adjustments.csv` | Fees, chargebacks, deductions, and bonuses |
+## Documentation
 
-Five payers show payment issues covering all patterns described in [PATTERNS.md](PATTERNS.md); the other three are paid normally. `answer_key.csv` lists each issue for testing.
-
-Larger datasets can be generated with `python -m paytrace.synth --help`. See [docs/SYNTH_DESIGN.md](docs/SYNTH_DESIGN.md).
+- [Detection patterns](PATTERNS.md)
+- [Sample data](docs/sample-data.md)
 
 ## Disclaimer
 

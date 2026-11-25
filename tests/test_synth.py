@@ -1,3 +1,6 @@
+import io
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -68,7 +71,7 @@ def test_clean_mode_has_no_events():
     f = synth.generate(workers=20, seed=5, inject=False, background=False)
     assert f["labels"].empty
     assert not f["payers"]["is_problem_payer"].any()
-    assert (f["adjustments"]["disclosed"] == "yes").all()  # only legitimate adjustments
+    assert (f["adjustments"]["disclosed"] == "yes").all()
 
 
 def test_cli_writes_files(tmp_path):
@@ -87,10 +90,9 @@ def test_sample_contains_every_pattern_and_clean_payers():
 
 
 def test_committed_sample_matches_generator():
-    from pathlib import Path
     folder = Path(__file__).resolve().parents[1] / "samples" / "freelancer"
     f = synth.make_sample()
     for name in ("expected", "received", "adjustments"):
         on_disk = pd.read_csv(folder / f"{name}.csv")
-        fresh = pd.read_csv(pd.io.common.StringIO(f[name].to_csv(index=False)))
+        fresh = pd.read_csv(io.StringIO(f[name].to_csv(index=False)))
         pd.testing.assert_frame_equal(on_disk, fresh)

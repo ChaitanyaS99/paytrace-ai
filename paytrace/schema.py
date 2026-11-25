@@ -1,14 +1,13 @@
-"""Canonical schema for PayTrace AI.
+"""Table definitions and validation.
 
-Every input (uploaded file or questionnaire) is converted into three tables:
+All inputs are normalized into three tables:
 
-    expected     what the worker was owed
-    received     what actually arrived
-    adjustments  fees, deductions, chargebacks, bonuses, corrections
+    expected     amounts owed to the worker
+    received     payments received
+    adjustments  fees, deductions, chargebacks, bonuses and corrections
 
-`coerce(df, table)` converts types and fills derivable columns.
-`validate(df, table)` returns a list of readable problems (empty list = valid).
-It never raises on bad user data, so the app can show the problems on screen.
+coerce() converts types and fills derivable values. validate() returns a list
+of readable problems instead of raising, so they can be shown to the user.
 """
 
 from __future__ import annotations
@@ -107,9 +106,8 @@ def empty(table: str) -> pd.DataFrame:
 
 
 def coerce(df: pd.DataFrame, table: str) -> pd.DataFrame:
-    """Return a copy with canonical dtypes, missing optional columns added,
-    and derivable values filled. Unparseable values become NaN/NaT so that
-    validate() can report them."""
+    """Return a typed copy with optional columns added and derivable values filled.
+    Unreadable values become NaN/NaT and are reported by validate()."""
     spec = get_spec(table)
     out = df.copy()
     out.columns = [str(c).strip().lower() for c in out.columns]
@@ -117,7 +115,7 @@ def coerce(df: pd.DataFrame, table: str) -> pd.DataFrame:
     for col in spec.columns:
         if col.name not in out.columns:
             if col.required:
-                continue  # validate() reports it
+                continue
             out[col.name] = pd.NA
         s = out[col.name]
         if col.kind == "float":
@@ -151,21 +149,21 @@ def coerce(df: pd.DataFrame, table: str) -> pd.DataFrame:
 
 
 def validate(df: pd.DataFrame, table: str, max_examples: int = 3) -> list[str]:
-    """Return readable problems with a coerced frame. Empty list means valid."""
+    """Return a list of problems with a coerced table. An empty list means it is valid."""
     spec = get_spec(table)
     problems: list[str] = []
 
     missing = [c for c in spec.required if c not in df.columns]
     if missing:
         problems.append(f"{table}: missing required column(s): {', '.join(missing)}")
-        return problems  # nothing else is checkable reliably
+        return problems
 
     if df.empty:
         problems.append(f"{table}: no rows found")
         return problems
 
     def rows(mask: pd.Series) -> str:
-        idx = [str(i + 2) for i in mask[mask].index[:max_examples]]  # +2 = spreadsheet row
+        idx = [str(i + 2) for i in mask[mask].index[:max_examples]]  # spreadsheet row numbers
         more = "" if mask.sum() <= max_examples else f" (+{mask.sum() - max_examples} more)"
         return ", ".join(idx) + more
 
@@ -211,6 +209,6 @@ def validate(df: pd.DataFrame, table: str, max_examples: int = 3) -> list[str]:
 
 
 def load(df: pd.DataFrame, table: str) -> tuple[pd.DataFrame, list[str]]:
-    """Convenience: coerce then validate."""
+    """Coerce and validate a table."""
     clean = coerce(df, table)
     return clean, validate(clean, table)

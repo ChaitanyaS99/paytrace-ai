@@ -1,0 +1,93 @@
+{
+  "paypal": {
+    "label": "PayPal activity download",
+    "table": "received",
+    "signature": [
+      "Gross",
+      "Fee",
+      "Net",
+      "Transaction ID"
+    ],
+    "mapping": {
+      "payment_id": "Transaction ID",
+      "payer": "Name",
+      "payment_date": "Date",
+      "gross_amount": "Gross",
+      "fee_amount": "Fee",
+      "net_amount": "Net",
+      "reference": "Invoice Number",
+      "memo": "Type"
+    },
+    "fee_is_negative": true,
+    "positive_only": "gross_amount"
+  },
+  "stripe": {
+    "label": "Stripe payments export",
+    "table": "received",
+    "signature": [
+      "Created date (UTC)",
+      "Amount",
+      "Fee"
+    ],
+    "mapping": {
+      "payment_id": "id",
+      "payer": "Customer Description",
+      "payment_date": "Created date (UTC)",
+      "gross_amount": "Amount",
+      "fee_amount": "Fee",
+      "net_amount": "Net",
+      "memo": "Description"
+    },
+    "positive_only": "gross_amount"
+  },
+  "upwork": {
+    "label": "Upwork transaction history",
+    "table": "received",
+    "signature": [
+      "Ref ID",
+      "Type",
+      "Amount",
+      "Team"
+    ],
+    "mapping": {
+      "payment_id": "Ref ID",
+      "payer": "Team",
+      "payment_date": "Date",
+      "net_amount": "Amount",
+      "memo": "Description"
+    },
+    "positive_only": "net_amount"
+  },
+  "doordash": {
+    "label": "DoorDash earnings statement",
+    "table": "received",
+    "signature": [
+      "Base Pay",
+      "Tips",
+      "Total Pay"
+    ],
+    "mapping": {
+      "payment_date": "Date",
+      "net_amount": "Total Pay",
+      "memo": "Description"
+    },
+    "default_payer": "DoorDash"
+  },
+  "invoices": {
+    "label": "Invoice list (generic spreadsheet)",
+    "table": "expected",
+    "signature": [
+      "Invoice",
+      "Client",
+      "Due Date"
+    ],
+    "mapping": {
+      "expected_id": "Invoice",
+      "payer": "Client",
+      "expected_amount": "Amount",
+      "due_date": "Due Date",
+      "description": "Description",
+      "reference": "Invoice"
+    }
+  }
+}

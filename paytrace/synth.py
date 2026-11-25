@@ -1,21 +1,10 @@
-"""Synthetic payment-history generator with labeled, injected patterns.
+"""Generate synthetic payment histories for development and testing.
 
-Produces the three canonical tables (expected, received, adjustments) for N
-workers, plus:
-    labels.csv  one row per injected event (ground truth for evaluation)
-    payers.csv  one row per worker-payer relationship, with is_problem_payer
+Writes expected, received and adjustments tables, plus labels.csv (one row per
+known discrepancy) and payers.csv (one row per worker-payer pair).
 
-Design choices (see docs/SYNTH_DESIGN.md):
-* "Problem payers" (~7%) are chosen first; they get 1-3 bad behaviours at high
-  rates. Normal payers still get rare background events (an occasional late or
-  short payment), so a single event does not identify a problem payer.
-* Clean histories include legitimate noise: bank lag of 0-3 days, disclosed
-  bonuses and chargebacks, payments not yet due at the end of the window.
-* Same seed -> identical output.
-
-CLI:
+Usage:
     python -m paytrace.synth --workers 300 --months 12 --seed 42 --out data/synth
-    python -m paytrace.synth --clean ...   # no injected or background events
 """
 
 from __future__ import annotations
@@ -39,7 +28,7 @@ PATTERNS = (
     "unmatched_deposit",
 )
 
-# Per-item probabilities for problem payers
+# Per-item event probabilities for problem payers
 PROBLEM_RATES = {
     "missing_payment": 0.15,
     "partial_payment": 0.25,
@@ -47,19 +36,19 @@ PROBLEM_RATES = {
     "unexplained_deduction": 0.20,
     "duplicate_deduction": 0.12,
 }
-# Rare background events for normal payers (real events, but not a pattern)
+# Occasional one-off events for normal payers
 BACKGROUND_RATES = {
     "missing_payment": 0.004,
     "partial_payment": 0.01,
     "late_payment": 0.03,
     "unexplained_deduction": 0.005,
 }
-GRACE_DAYS = 14  # an item due within this many days of the end is never "missing"
+GRACE_DAYS = 14  # items due this close to the end date are never marked missing
 
 _PREFIX = ["North", "Blue", "Summit", "Bright", "Metro", "Lake", "Prairie", "Iron", "Cedar", "Union",
            "Harbor", "Pixel", "Golden", "Red", "Maple", "Atlas", "Nova", "Swift", "Civic", "Loop"]
 _SUFFIX = ["Media", "Labs", "Studio", "Partners", "Works", "Digital", "Group", "Design", "Health", "Logistics"]
-_PLATFORMS = ["DashRun", "GigNest", "TaskHub", "QuickCart", "RideLoop", "FreelanceBay", "ClassPass Pro", "ShiftUp"]
+_PLATFORMS = ["DashRun", "GigNest", "TaskHub", "QuickCart", "RideLoop", "FreelanceBay", "StudioShift", "ShiftUp"]
 
 
 @dataclass
@@ -69,8 +58,8 @@ class SynthConfig:
     start: str = "2025-11-01"
     seed: int = 42
     problem_payer_rate: float = 0.07
-    inject: bool = True       # inject problem-payer patterns
-    background: bool = True   # rare events on normal payers
+    inject: bool = True
+    background: bool = True
     unmatched_rate: float = 0.5  # mean unmatched deposits per worker
 
 
@@ -84,7 +73,6 @@ class _Builder:
         self.labels, self.payers = [], []
         self._n = {"E": 0, "P": 0, "A": 0}
 
-    # ---------- helpers ----------
     def _id(self, kind: str, worker: str) -> str:
         self._n[kind] += 1
         return f"{worker}-{kind}{self._n[kind]:06d}"
@@ -113,7 +101,6 @@ class _Builder:
                     fee_pct=float(r.choice([0.0, 0.0, 0.029])),
                     rate=round(float(r.lognormal(np.log(55), 0.35)), 2), units_mu=np.log(30))
 
-    # ---------- main ----------
     def build(self) -> dict[str, pd.DataFrame]:
         for w in range(1, self.cfg.workers + 1):
             self._worker(f"W{w:04d}")
@@ -144,7 +131,7 @@ class _Builder:
     def _payer_history(self, worker, p, problem, behaviours):
         r = self.rng
         span = (self.as_of - self.start).days
-        # trend patterns start somewhere in the middle third of the window
+        # Trend patterns begin in the middle third of the period
         trend_start = self.start + pd.Timedelta(days=int(r.integers(span // 3, 2 * span // 3)))
         creep = float(r.uniform(0.02, 0.05))
         erosion = float(r.uniform(0.01, 0.025))  # per month
@@ -177,7 +164,7 @@ class _Builder:
                 return r.random() < BACKGROUND_RATES[pattern]
             return False
 
-        # payment date: a little before due, plus 0-3 days of bank lag
+        # Paid slightly before the due date, plus 0-3 days of bank processing
         early = int(r.integers(0, max(p["terms"] // 3, 1) + 1))
         pay_date = due - pd.Timedelta(days=early) + pd.Timedelta(days=int(r.integers(0, 4)))
         events = []
@@ -189,7 +176,7 @@ class _Builder:
             self._label(worker, p["name"], "missing_payment", due, problem, eid=eid)
             return
         if pay_date > self.as_of:
-            return  # legitimately not paid yet
+            return  # not yet paid
 
         gross = expected_amount
         if "rate_erosion" in behaviours and invoice_date >= trend_start:
@@ -220,7 +207,7 @@ class _Builder:
         if "rounding_down" in behaviours and r.random() < 0.8:
             net -= float(r.uniform(0.01, 2.99))
 
-        # legitimate, disclosed adjustments (not labeled)
+        # Disclosed adjustments; these are legitimate and not labeled
         if r.random() < 0.03:
             amt = round(float(r.uniform(10, 60)), 2)
             gross = round(gross + amt, 2)  # a bonus is part of gross pay
@@ -289,8 +276,7 @@ SAMPLE_PAYERS = [
 
 
 def make_sample(seed: int = 2026, months: int = 12, start: str = "2025-11-01") -> dict[str, pd.DataFrame]:
-    """One worker with eight payers: three clean, five showing specific patterns,
-    plus unmatched deposits. Tries seeds from `seed` upward until every pattern appears."""
+    """Build the bundled sample: one worker, eight payers, every pattern represented."""
     for s in range(seed, seed + 200):
         b = _Builder(SynthConfig(workers=1, months=months, start=start, seed=s, background=False))
         worker = "W0001"
@@ -316,7 +302,6 @@ def write_sample(out_dir: str | Path = "samples/freelancer") -> None:
     out.mkdir(parents=True, exist_ok=True)
     for name in ("expected", "received", "adjustments"):
         f[name].to_csv(out / f"{name}.csv", index=False)
-    f["labels"].to_csv(out / "answer_key.csv", index=False)
 
 
 def generate(cfg: SynthConfig | None = None, **kwargs) -> dict[str, pd.DataFrame]:
@@ -339,7 +324,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--start", default="2025-11-01")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--problem-rate", type=float, default=0.07)
-    ap.add_argument("--clean", action="store_true", help="no injected or background events")
+    ap.add_argument("--clean", action="store_true", help="generate histories with no discrepancies")
     ap.add_argument("--out", default="data/synth")
     a = ap.parse_args(argv)
     cfg = SynthConfig(workers=a.workers, months=a.months, start=a.start, seed=a.seed,
