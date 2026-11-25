@@ -1,0 +1,24 @@
+payer,pattern,date,expected_id,payment_id,adjustment_id,is_problem_payer
+Atlas Design,missing_payment,2026-01-27,W0001-E000052,,,True
+Atlas Design,late_payment,2026-04-04,W0001-E000053,W0001-P000050,,True
+Atlas Design,late_payment,2026-05-24,W0001-E000054,W0001-P000051,,True
+Atlas Design,late_payment,2026-09-02,W0001-E000058,W0001-P000055,,True
+Cedar Health,partial_payment,2025-12-26,W0001-E000063,W0001-P000059,,True
+Cedar Health,partial_payment,2026-03-23,W0001-E000066,W0001-P000062,,True
+Cedar Health,partial_payment,2026-06-16,W0001-E000069,W0001-P000065,,True
+Summit Media,rounding_down,2025-11-01,,,,True
+DashRun,fee_creep,2026-06-16,,,,True
+DashRun,unexplained_deduction,2025-11-26,W0001-E000103,W0001-P000097,W0001-A000002,True
+DashRun,unexplained_deduction,2026-05-15,W0001-E000128,W0001-P000122,W0001-A000005,True
+DashRun,unexplained_deduction,2026-07-25,W0001-E000138,W0001-P000132,W0001-A000006,True
+DashRun,unexplained_deduction,2026-08-04,W0001-E000139,W0001-P000133,W0001-A000007,True
+DashRun,unexplained_deduction,2026-08-15,W0001-E000141,W0001-P000135,W0001-A000008,True
+DashRun,unexplained_deduction,2026-08-23,W0001-E000142,W0001-P000136,W0001-A000010,True
+DashRun,unexplained_deduction,2026-09-13,W0001-E000145,W0001-P000139,W0001-A000011,True
+TaskHub,rate_erosion,2026-04-21,,,,True
+TaskHub,duplicate_deduction,2026-02-27,W0001-E000169,W0001-P000162,W0001-A000016,True
+TaskHub,duplicate_deduction,2026-03-06,W0001-E000170,W0001-P000163,W0001-A000018,True
+TaskHub,duplicate_deduction,2026-05-22,W0001-E000181,W0001-P000174,W0001-A000020,True
+TaskHub,duplicate_deduction,2026-10-15,W0001-E000202,W0001-P000195,W0001-A000023,True
+Atlas Design,unmatched_deposit,2026-01-02,,W0001-P000198,,False
+Summit Media,unmatched_deposit,2026-03-23,,W0001-P000199,,False
